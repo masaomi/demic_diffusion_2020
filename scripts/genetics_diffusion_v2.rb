@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210831-052232'
+# Version = '20210831-052831'
 
 require "zlib"
 
@@ -75,7 +75,7 @@ module Cell
       self << baby
     end
   end
-  def pop2rgb
+  def cell2rgb
     sum = 0
     if length > 0
       each do |gene|
@@ -147,6 +147,9 @@ module Cells
   end
 end
 
+module Color
+end
+
 class String
   include Gene
 end
@@ -158,7 +161,7 @@ end
 
 
 # init world
-#world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
+color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
 cells = Array.new(HEIGHT).map{Array.new(WIDTH).map{[]}}
 cells.init_cells
 #open("time_0000.png", "w") do |out|
