@@ -1,12 +1,13 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210831-113119'
+# Version = '20210831-120259'
 
 require "zlib"
 require "fileutils"
+require 'json'
 
 # default
-OUT_DIR = "png"
+OUT_DIR = "out"
 FileUtils.mkdir_p OUT_DIR
 WIDTH, HEIGHT = 100, 100
 CENTER = [HEIGHT/2, WIDTH/2]
@@ -45,11 +46,9 @@ def save_color_world(color_world, gi)
     make_png(color_world, out)
   end
 end
-
 def dist(a, b)
   Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 end
-
 def rgb(pop_num)
   rb = (pop_num * 255 / UNIT_MAX).to_i
   if rb > 255
@@ -173,6 +172,16 @@ module Cells
       end
     end
   end
+  def save_cells(gi)
+    out_file = File.join(OUT_DIR, "cells_%04d.txt" % (gi+1))
+    open(out_file, "w") do |out|
+      out.puts self.to_json
+    end
+  end
+  def load_cells
+    # TD
+    cells = JSON.parse(File.read("test.txt"))
+  end
 end
 
 class String
@@ -190,42 +199,20 @@ color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
 cells = Array.new(HEIGHT).map{Array.new(WIDTH).map{[]}}
 cells.init_cells
 
-#HEIGHT.times do |y|
-#  WIDTH.times do |x|
-#    if dist(CENTER, [x,y]) < 10
-#      color_world[x][y] = rgb(UNIT_MAX)
-#    else
-#      color_world[x][y] = rgb(0)
-#    end
-#  end
-#end
 cells.update_color_world(color_world)
-open("png/time_0000.png", "w") do |out|
+open(File.join(OUT_DIR, "time_0000.png"), "w") do |out|
   make_png(color_world, out)
 end
+cells.save_cells(0)
 
 GENERATION.times do |gi|
   warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
   cells.one_generation
   cells.update_color_world(color_world)
   save_color_world(color_world, gi)
-  #out_file = File.join(OUT_DIR, "time_%04d.png" % (gi+1))
-  #open(out_file, "w") do |out|
-  #  make_png(color_world, out)
-  #end
 end
 
 
 __END__
-# sample
-raw_data = []
-HEIGHT.times do
-  raw_data << WIDTH.times.with_object([]) do |i, ob|
-    ob << [rand(256), rand(256), rand(256)]
-  end
-end
-open("test.png", "w") do |out|
-  make_png(raw_data, out)
-end
 
 
