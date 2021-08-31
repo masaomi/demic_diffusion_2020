@@ -1,2 +1,2 @@
 
-convert -delay 5 -loop 0 time_0* anime.gif
+convert -delay 5 -loop 0 png/time_0* anime.gif

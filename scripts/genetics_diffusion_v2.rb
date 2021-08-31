@@ -1,13 +1,16 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210831-111611'
+# Version = '20210831-113119'
 
 require "zlib"
+require "fileutils"
 
 # default
+OUT_DIR = "png"
+FileUtils.mkdir_p OUT_DIR
 WIDTH, HEIGHT = 100, 100
 CENTER = [HEIGHT/2, WIDTH/2]
-GENERATION = 300
+GENERATION = 200
 UNIT_MAX = 10
 GENOME_LENGTH = 8
 
@@ -35,6 +38,12 @@ def make_png(rgb_data, out=$stdout)
   out.print chunk("IDAT", Zlib::Deflate.deflate(img_data))
 
   out.print chunk("IEND", "")
+end
+def save_color_world(color_world, gi)
+  out_file = File.join(OUT_DIR, "time_%04d.png" % (gi+1))
+  open(out_file, "w") do |out|
+    make_png(color_world, out)
+  end
 end
 
 def dist(a, b)
@@ -156,7 +165,6 @@ module Cells
         end
       end
     end
-    
   end
   def update_color_world(color_world)
     HEIGHT.times do |y|
@@ -192,7 +200,7 @@ cells.init_cells
 #  end
 #end
 cells.update_color_world(color_world)
-open("time_0000.png", "w") do |out|
+open("png/time_0000.png", "w") do |out|
   make_png(color_world, out)
 end
 
@@ -200,10 +208,11 @@ GENERATION.times do |gi|
   warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
   cells.one_generation
   cells.update_color_world(color_world)
-  out_file = "time_%04d.png" % (gi+1)
-  open(out_file, "w") do |out|
-    make_png(color_world, out)
-  end
+  save_color_world(color_world, gi)
+  #out_file = File.join(OUT_DIR, "time_%04d.png" % (gi+1))
+  #open(out_file, "w") do |out|
+  #  make_png(color_world, out)
+  #end
 end
 
 
