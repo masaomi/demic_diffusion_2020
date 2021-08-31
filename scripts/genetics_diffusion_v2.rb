@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210831-052831'
+# Version = '20210831-111611'
 
 require "zlib"
 
@@ -65,13 +65,27 @@ module Gene
     end
     baby
   end
+  def num_mutations
+    split(//).count("1")
+  end
+  def rgb
+    if self.length > 0
+      rb = (num_mutations * 255 / self.length).to_i
+      if rb > 255
+        rb = 255
+      end
+      [255-rb, 255-rb, 255]
+    else
+      [255, 255, 255]
+    end
+  end
 end
 
 module Cell
   def generate_cell_pop(num_pop)
     self.clear
     num_pop.times do 
-      baby = "11111111"
+      baby = "1"*GENOME_LENGTH
       self << baby
     end
   end
@@ -86,6 +100,11 @@ module Cell
     else
       [255, 255, 255]
     end
+  end
+  def average_genotype
+    self.map{|genome| genome.split(//)}.transpose.map{|nucs_at_same_pos|
+      nucs_at_same_pos.count("1") > nucs_at_same_pos.size/2 ? 1 : 0
+    }.join
   end
 end
 
@@ -137,17 +156,15 @@ module Cells
         end
       end
     end
-
-    #HEIGHT.times do |x|
-    #  WIDTH.times do |y|
-    #    d0 = dense(world[x][y])
-    #    world[x][y] = pop[x][y].pop2rgb
-    #  end
-    #end
+    
   end
-end
-
-module Color
+  def update_color_world(color_world)
+    HEIGHT.times do |y|
+      WIDTH.times do |x|
+        color_world[x][y] = self[x][y].average_genotype.rgb
+      end
+    end
+  end
 end
 
 class String
@@ -164,23 +181,30 @@ end
 color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
 cells = Array.new(HEIGHT).map{Array.new(WIDTH).map{[]}}
 cells.init_cells
-#open("time_0000.png", "w") do |out|
-#  make_png(world, out)
-#end
 
-def dense(rgb)
-  (255 - rgb.first) * UNIT_MAX / 255
+#HEIGHT.times do |y|
+#  WIDTH.times do |x|
+#    if dist(CENTER, [x,y]) < 10
+#      color_world[x][y] = rgb(UNIT_MAX)
+#    else
+#      color_world[x][y] = rgb(0)
+#    end
+#  end
+#end
+cells.update_color_world(color_world)
+open("time_0000.png", "w") do |out|
+  make_png(color_world, out)
 end
 
 GENERATION.times do |gi|
   warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
   cells.one_generation
-  #out_file = "time_%04d.png" % (gi+1)
-  #open(out_file, "w") do |out|
-  #  make_png(world, out)
-  #end
+  cells.update_color_world(color_world)
+  out_file = "time_%04d.png" % (gi+1)
+  open(out_file, "w") do |out|
+    make_png(color_world, out)
+  end
 end
-
 
 
 __END__
