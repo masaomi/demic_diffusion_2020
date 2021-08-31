@@ -1,0 +1,4 @@
+#20200709 masa
+convert -delay 5 -loop 0 time_0* anime.gif
+rm time_0*
+rm anime.gif

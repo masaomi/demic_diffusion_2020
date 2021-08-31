@@ -1,20 +1,17 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20200709-130601'
+# Version = '20200709-125709'
 
 require "zlib"
 
-# default
 WIDTH, HEIGHT = 100, 100
-CENTER = [HEIGHT/2, WIDTH/2]
 GENERATION = 300
 UNIT_MAX = 10
-
-# parameters
 BIRTH_RATE = 1.0
 DEATH_RATE = 0.5
-MIGRATE_RATE = 0.1
-MUTATION_RATE = 0.02
+MIGRATE_RATE = 0.05
+MUTATION_RATE = 0.2
+CENTER = [HEIGHT/2, WIDTH/2]
 
 
 def make_png(rgb_data, out=$stdout)
