@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210901-105129'
+# Version = '20210901-105406'
 
 require "zlib"
 require "fileutils"
@@ -162,7 +162,8 @@ module Gene
       if rb > 255
         rb = 255
       end
-      [255-rb, 255-rb, 255]
+      #[255-rb, 255-rb, 255]
+      [rb, rb, 255]
     else
       [255, 255, 255]
     end
@@ -173,7 +174,7 @@ module Cell
   def generate_cell_pop(num_pop)
     self.clear
     num_pop.times do 
-      baby = "1"*$genome_length
+      baby = "0"*$genome_length
       self << baby
     end
   end
