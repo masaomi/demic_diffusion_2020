@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210831-120259'
+# Version = '20210901-105129'
 
 require "zlib"
 require "fileutils"
@@ -8,19 +8,99 @@ require 'json'
 
 # default
 OUT_DIR = "out"
-FileUtils.mkdir_p OUT_DIR
 WIDTH, HEIGHT = 100, 100
 CENTER = [HEIGHT/2, WIDTH/2]
-GENERATION = 200
 UNIT_MAX = 10
+
+
+# parameters1, semi fixed
+SEED = 1234
+
+GENERATION = 100
 GENOME_LENGTH = 8
 
-# parameters
+# parameters2, for parameter searching
 BIRTH_RATE = 1.0
 DEATH_RATE = 0.5
-MIGRATE_RATE = 0.1
+MIGRATION_RATE = 0.1
 MUTATION_RATE = 0.02
 
+help =-> () do
+  puts <<-eos
+  usage:
+   #{File.basename(__FILE__)} (options)
+  options:
+   -b birth_rate (default: #{BIRTH_RATE})
+   -d death_rate (default: #{DEATH_RATE})
+   -g migration_rate (default: #{MIGRATION_RATE})
+   -m mutation_rate (default: #{MUTATION_RATE})
+
+   -s random seed (default: #{SEED})
+   -n generation (default: #{GENERATION})
+   -l genome length (default: #{GENOME_LENGTH})
+
+   -o out dir (default: #{OUT_DIR})
+   -h command option help
+  eos
+  exit
+end
+
+if ARGV.index("-h")
+  help.()
+end
+$birth_rate = if i=ARGV.index("-b")
+                ARGV[i+1].to_f
+              else
+                BIRTH_RATE
+              end
+$death_rate = if i=ARGV.index("-d")
+                ARGV[i+1].to_f
+              else
+                DEATH_RATE
+              end
+$migration_rate = if i=ARGV.index("-g")
+                    ARGV[i+1].to_f
+                  else
+                    MIGRATION_RATE
+                  end
+$mutation_rate = if i=ARGV.index("-m")
+                   ARGV[i+1].to_f
+                 else
+                   MUTATION_RATE
+                 end
+$seed = if i=ARGV.index("-s")
+          ARGV[i+1].to_i
+        else
+          SEED
+        end
+
+$generation = if i=ARGV.index("-n")
+                ARGV[i+1].to_i
+              else
+                GENERATION
+              end
+
+$genome_length = if i=ARGV.index("-l")
+                   ARGV[i+1].to_i
+                 else
+                   GENOME_LENGTH
+                 end
+
+$out_dir = if i=ARGV.index("-o")
+             ARGV[i+1]
+           else
+             "#{OUT_DIR}_#{$birth_rate}_#{$death_rate}_#{$migration_rate}_#{$mutation_rate}"
+           end
+
+srand($seed)
+FileUtils.mkdir_p $out_dir
+
+def warn2(arg, log=File.join($out_dir, "command.log"))
+  open(log, "a") do |out|
+    out.puts arg
+    warn arg
+  end
+end
 
 def make_png(rgb_data, out=$stdout)
   width, height = WIDTH, HEIGHT
@@ -41,7 +121,7 @@ def make_png(rgb_data, out=$stdout)
   out.print chunk("IEND", "")
 end
 def save_color_world(color_world, gi)
-  out_file = File.join(OUT_DIR, "time_%04d.png" % (gi+1))
+  out_file = File.join($out_dir, "time_%04d.png" % (gi+1))
   open(out_file, "w") do |out|
     make_png(color_world, out)
   end
@@ -60,8 +140,8 @@ end
 module Gene
   def make_child
     baby = ""
-    GENOME_LENGTH.times do |i|
-      if rand < MUTATION_RATE
+    $genome_length.times do |i|
+      if rand < $mutation_rate
         baby << if self[i] == "0"
                   "1"
                 else
@@ -93,20 +173,8 @@ module Cell
   def generate_cell_pop(num_pop)
     self.clear
     num_pop.times do 
-      baby = "1"*GENOME_LENGTH
+      baby = "1"*$genome_length
       self << baby
-    end
-  end
-  def cell2rgb
-    sum = 0
-    if length > 0
-      each do |gene|
-        sum += gene.to_i(2)
-      end
-      rb = sum/length
-      [255-rb, 255-rb, 255]
-    else
-      [255, 255, 255]
     end
   end
   def average_genotype
@@ -138,7 +206,7 @@ module Cells
     HEIGHT.times do |y|
       WIDTH.times do |x|
         self[x][y].size.times do |i|
-          if rand<MIGRATE_RATE
+          if rand<$migration_rate
             if self[x][y].length > 0
               select_i = rand(self[x][y].length)
               select_x = self[x][y].delete_at(select_i)
@@ -149,13 +217,13 @@ module Cells
               end
             end
           end
-          if rand<(BIRTH_RATE)
+          if rand<($birth_rate)
             if self[x][y].size > 0 and self[x][y].size < UNIT_MAX
               select_i = rand(self[x][y].length)
               self[x][y] << self[x][y][select_i].make_child
             end
           end
-          if rand<(DEATH_RATE)
+          if rand<($death_rate)
             if self[x][y].size > 0
               select_i = rand(self[x][y].length)
               self[x][y].delete_at(select_i)
@@ -173,7 +241,9 @@ module Cells
     end
   end
   def save_cells(gi)
-    out_file = File.join(OUT_DIR, "cells_%04d.txt" % (gi+1))
+    sub_out_dir = File.join($out_dir, "cells")
+    FileUtils.mkdir_p sub_out_dir unless File.exist?(sub_out_dir)
+    out_file = File.join(sub_out_dir, "cells_%04d.txt" % (gi+1))
     open(out_file, "w") do |out|
       out.puts self.to_json
     end
@@ -200,17 +270,36 @@ cells = Array.new(HEIGHT).map{Array.new(WIDTH).map{[]}}
 cells.init_cells
 
 cells.update_color_world(color_world)
-open(File.join(OUT_DIR, "time_0000.png"), "w") do |out|
+open(File.join($out_dir, "time_0000.png"), "w") do |out|
   make_png(color_world, out)
 end
 cells.save_cells(0)
 
-GENERATION.times do |gi|
+$generation.times do |gi|
   warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
   cells.one_generation
+  cells.save_cells(gi)
   cells.update_color_world(color_world)
   save_color_world(color_world, gi)
 end
+
+command = "convert -delay 5 -loop 0 #{$out_dir}/time_* #{$out_dir}/anime.gif; rm #{$out_dir}/time_*.png"
+`#{command}`
+
+# log
+puts
+warn2 "ruby #{__FILE__} #{ARGV.join(" ")}"
+warn2 "# #{command}"
+warn2 "# Parameters"
+warn2 "# SEED: #{$seed}"
+warn2 "# GENERATION: #{$generation}"
+warn2 "# GENOME_LENGTH: #{$genome_length}"
+
+# parameters2, for parameter searching
+warn2 "# BIRTH_RATE: #{$birth_rate}"
+warn2 "# DEATH_RATE: #{$death_rate}"
+warn2 "# MIGRATION_RATE: #{$migration_rate}"
+warn2 "# MUTATION_RATE: #{$mutation_rate}"
 
 
 __END__
