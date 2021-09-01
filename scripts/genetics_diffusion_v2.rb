@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210901-140859'
+# Version = '20210901-152914'
 
 require "zlib"
 require "fileutils"
@@ -40,6 +40,7 @@ help =-> () do
    -l genome length (default: #{GENOME_LENGTH})
 
    -o out dir (default: #{OUT_DIR})
+   -na do not make anime.gif (default: make anime.gif)
    -h command option help
   eos
   exit
@@ -91,6 +92,7 @@ $out_dir = if i=ARGV.index("-o")
            else
              "#{OUT_DIR}_#{$birth_rate}_#{$death_rate}_#{$migration_rate}_#{$mutation_rate}"
            end
+$do_not_make_anime = ARGV.index("-na")
 
 srand($seed)
 FileUtils.mkdir_p $out_dir
@@ -120,21 +122,14 @@ def make_png(rgb_data, out=$stdout)
 
   out.print chunk("IEND", "")
 end
-def save_color_world(color_world, gi)
-  out_file = File.join($out_dir, "time_%04d.png" % (gi+1))
+def save_color_world(color_world, gi, type)
+  out_file = File.join($out_dir, "#{type}_time_%04d.png" % (gi))
   open(out_file, "w") do |out|
     make_png(color_world, out)
   end
 end
 def dist(a, b)
   Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
-end
-def rgb(pop_num)
-  rb = (pop_num * 255 / UNIT_MAX).to_i
-  if rb > 255
-    rb = 255
-  end
-  [255-rb, 255-rb, 255]
 end
 
 module Gene
@@ -183,6 +178,13 @@ module Cell
       nucs_at_same_pos.count("1") > nucs_at_same_pos.size/2 ? 1 : 0
     }.join
   end
+  def rgb
+    rb = (size * 255 / UNIT_MAX).to_i
+    if rb > 255
+      rb = 255
+    end
+    [255-rb, 255-rb, 255]
+  end
 end
 
 module Cells
@@ -193,10 +195,7 @@ module Cells
     HEIGHT.times do |y|
       WIDTH.times do |x|
         if dist(CENTER, [x,y]) < 10
-          #world[x][y] = rgb(UNIT_MAX)
           self[x][y].generate_cell_pop(UNIT_MAX)
-        else
-          #world[x][y] = rgb(0)
         end
       end
     end
@@ -236,17 +235,24 @@ module Cells
       end
     end
   end
-  def update_color_world(color_world)
+  def update_genotype_color_world(color_world)
     HEIGHT.times do |y|
       WIDTH.times do |x|
         color_world[x][y] = self[x][y].average_genotype.rgb
       end
     end
   end
+  def update_dense_color_world(color_world)
+    HEIGHT.times do |y|
+      WIDTH.times do |x|
+        color_world[x][y] = self[x][y].rgb
+      end
+    end
+  end
   def save_cells(gi)
     sub_out_dir = File.join($out_dir, "cells")
     FileUtils.mkdir_p sub_out_dir unless File.exist?(sub_out_dir)
-    out_file = File.join(sub_out_dir, "cells_%04d.txt" % (gi+1))
+    out_file = File.join(sub_out_dir, "cells_%04d.txt" % (gi))
     open(out_file, "w") do |out|
       out.puts self.to_json
     end
@@ -266,32 +272,44 @@ class Array
   include Cells
 end
 
+##
+## main
+##
 
 # init world
-color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
+human_genotype_color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
+human_dense_color_world = Array.new(HEIGHT).map{Array.new(WIDTH,0)}
 cells = Array.new(HEIGHT).map{Array.new(WIDTH).map{[]}}
 cells.init_cells
 
-cells.update_color_world(color_world)
-open(File.join($out_dir, "time_0000.png"), "w") do |out|
-  make_png(color_world, out)
-end
+cells.update_genotype_color_world(human_genotype_color_world)
+cells.update_dense_color_world(human_dense_color_world)
 cells.save_cells(0)
+unless $do_not_make_anime
+  save_color_world(human_genotype_color_world, 0, "human_genotype")
+  save_color_world(human_dense_color_world, 0, "human_dense")
+end
 
 $generation.times do |gi|
-  warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
   cells.one_generation
-  cells.save_cells(gi)
-  cells.update_color_world(color_world)
-  save_color_world(color_world, gi)
+  warn "# generation: #{gi+1}, pop_size: #{cells.total_size}"
+  cells.save_cells(gi+1)
+  unless $do_not_make_anime
+    cells.update_genotype_color_world(human_genotype_color_world)
+    cells.update_dense_color_world(human_dense_color_world)
+    save_color_world(human_genotype_color_world, gi+1, "human_genotype")
+    save_color_world(human_dense_color_world, gi+1, "human_dense")
+  end
 end
-
-command = "convert -delay 5 -loop 0 #{$out_dir}/time_* #{$out_dir}/anime.gif; rm #{$out_dir}/time_*.png"
-`#{command}`
 
 # log
 puts
 warn2 "ruby #{__FILE__} #{ARGV.join(" ")}"
+command = "convert -delay 5 -loop 0 #{$out_dir}/human_genotype_time_* #{$out_dir}/human_genotype_anime.gif; rm #{$out_dir}/human_genotype_time_*.png"
+`#{command}`
+warn2 "# #{command}"
+command = "convert -delay 5 -loop 0 #{$out_dir}/human_dense_time_* #{$out_dir}/human_dense_anime.gif; rm #{$out_dir}/human_dense_time_*.png"
+`#{command}`
 warn2 "# #{command}"
 warn2 "# Parameters"
 warn2 "# SEED: #{$seed}"
