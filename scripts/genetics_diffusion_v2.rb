@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210901-105406'
+# Version = '20210901-140859'
 
 require "zlib"
 require "fileutils"
@@ -204,8 +204,10 @@ module Cells
 
   # one generation
   def one_generation
-    HEIGHT.times do |y|
-      WIDTH.times do |x|
+    #HEIGHT.times do |y|
+      #WIDTH.times do |x|
+    (0..HEIGHT-1).to_a.shuffle.each do |y|
+      (0..WIDTH-1).to_a.shuffle.each do |x|
         self[x][y].size.times do |i|
           if rand<$migration_rate
             if self[x][y].length > 0
