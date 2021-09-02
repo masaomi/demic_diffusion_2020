@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210902-060312'
+# Version = '20210902-080420'
 
 require "zlib"
 require "fileutils"
@@ -307,7 +307,7 @@ module Cells
         if rand<$c_migration_rate
           if self[x][y].length > 0
             select_i = rand(self[x][y].length)
-            select_x = self[x][y].delete_at(select_i)
+            select_x = self[x][y][select_i]
             x_direction = [1,-1][rand(2)]
             y_direction = [1,-1][rand(2)]
             if self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size < UNIT_MAX and
@@ -322,6 +322,8 @@ module Cells
             self[x][y] << self[x][y][select_i].make_child($c_mutation_rate)
           end
         end
+      end
+      self[x][y].size.times do |i|
         if rand<($c_death_rate)
           if self[x][y].size > 0
             select_i = rand(self[x][y].length)
@@ -337,7 +339,7 @@ module Cells
         if rand<$l_migration_rate
           if self[x][y].length > 0
             select_i = rand(self[x][y].length)
-            select_x = self[x][y].delete_at(select_i)
+            select_x = self[x][y][select_i]
             x_direction = [1,-1][rand(2)]
             y_direction = [1,-1][rand(2)]
             if self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size < UNIT_MAX and
@@ -352,6 +354,8 @@ module Cells
             self[x][y] << self[x][y][select_i].make_child($l_mutation_rate)
           end
         end
+      end
+      self[x][y].size.times do |i|
         if rand<($l_death_rate)
           if self[x][y].size > 0
             select_i = rand(self[x][y].length)
