@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210901-163941'
+# Version = '20210902-040952'
 
 require "zlib"
 require "fileutils"
@@ -231,14 +231,15 @@ module Cells
   end
   def crop_one_generation(human_cells)
     (0..WIDTH-1).to_a.repeated_permutation(2).to_a.shuffle.each do |x,y|
-      self[x][y].size.times do |i|
+      human_cells[x][y].size.times do |i|
         if rand<$migration_rate
           if self[x][y].length > 0
             select_i = rand(self[x][y].length)
             select_x = self[x][y].delete_at(select_i)
             x_direction = [1,-1][rand(2)]
             y_direction = [1,-1][rand(2)]
-            if self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size < UNIT_MAX
+            if self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size < UNIT_MAX and
+               human_cells[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size > 0
               self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH] << select_x
             end
           end
@@ -340,6 +341,24 @@ $generation.times do |gi|
   end
 end
 
+class Array
+  def swap(a)
+    self[a], self[self.length-1] = self[self.length-1], self[a]
+    self
+  end
+end
+def merge_png(*types)
+  new_type = types.join("_").split(/_/).uniq.swap(1).join("_")
+  (0..$generation).each do |gi|
+    files = types.map{|type| "#{$out_dir}/#{type}_time_%04d.png" % gi}
+    merged_file = "#{$out_dir}/#{new_type}_time_#{"%04d" % gi}.png"
+    command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
+    `#{command}`
+    warn2 "# #{command}"
+  end
+  new_type
+end
+
 def make_gif_anime(type)
   command = "convert -delay 5 -loop 0 #{$out_dir}/#{type}_time_* #{$out_dir}/#{type}_anime.gif; rm #{$out_dir}/#{type}_time_*.png"
   `#{command}`
@@ -350,10 +369,10 @@ end
 puts
 warn2 "ruby #{__FILE__} #{ARGV.join(" ")}"
 unless $do_not_make_anime
-  make_gif_anime("human_genotype")
-  make_gif_anime("human_dense")
-  make_gif_anime("crop_genotype")
-  make_gif_anime("crop_dense")
+  human_crop_genotype = merge_png("human_genotype", "crop_genotype")
+  make_gif_anime(human_crop_genotype)
+  human_crop_dense = merge_png("human_dense", "crop_dense")
+  make_gif_anime(human_crop_dense)
 end
 warn2 "# Parameters"
 warn2 "# SEED: #{$seed}"
