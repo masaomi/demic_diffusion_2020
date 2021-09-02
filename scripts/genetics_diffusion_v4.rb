@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210902-043914'
+# Version = '20210902-060312'
 
 require "zlib"
 require "fileutils"
-require 'json'
+require "json"
+require "./lib/image_helper"
 
 # default
 OUT_DIR = "out"
@@ -476,12 +477,17 @@ def merge_png(*types)
     command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
     `#{command}`
     warn2 "# #{command}"
+    ImageHelper.write("generation: %04d" % gi, merged_file, merged_file)
+    ImageHelper.write('human', merged_file, merged_file, "0, -40")
+    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
+    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
   end
   new_type
 end
 
 def make_gif_anime(type)
   command = "convert -delay 5 -loop 0 #{$out_dir}/#{type}_time_* #{$out_dir}/#{type}_anime.gif; rm #{$out_dir}/#{type}_time_*.png"
+  #command = "convert -delay 5 -loop 0 #{$out_dir}/#{type}_time_* #{$out_dir}/#{type}_anime.gif"
   `#{command}`
   warn2 "# #{command}"
 end
