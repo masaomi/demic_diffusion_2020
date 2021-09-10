@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210910-095357'
+# Version = '20210910-100524'
 
 require "zlib"
 require "fileutils"
@@ -31,12 +31,14 @@ C_BIRTH_RATE = 1.0
 C_DEATH_RATE = 0.5
 C_MIGRATION_RATE = 0.1
 C_MUTATION_RATE = 0.02
+C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE = 1.0
 
 # lang
 L_BIRTH_RATE = 1.0
 L_DEATH_RATE = 0.5
 L_MIGRATION_RATE = 0.1
 L_MUTATION_RATE = 0.02
+L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE = 1.0
 
 
 help =-> () do
@@ -53,11 +55,13 @@ help =-> () do
    -cd crop death_rate (default: #{C_DEATH_RATE})
    -cg crop migration_rate (default: #{C_MIGRATION_RATE})
    -cm crop mutation_rate (default: #{C_MUTATION_RATE})
+   -ct crop transmission rate by human genotype (default: #{C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE})
 
    -lb lang birth_rate (default: #{L_BIRTH_RATE})
    -ld lang death_rate (default: #{L_DEATH_RATE})
    -lg lang migration_rate (default: #{L_MIGRATION_RATE})
    -lm lang mutation_rate (default: #{L_MUTATION_RATE})
+   -lt lang transmission rate by human genotype (default: #{L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE})
 
    -s random seed (default: #{SEED})
    -n generation (default: #{GENERATION})
@@ -117,6 +121,13 @@ $c_mutation_rate = if i=ARGV.index("-cm")
                    else
                      C_MUTATION_RATE
                    end
+$c_transmission_rate_by_human_genotype = if i=ARGV.index("-ct")
+                     ARGV[i+1].to_f
+                   else
+                     C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE
+                   end
+
+
 
 # lang
 $l_birth_rate = if i=ARGV.index("-lb")
@@ -139,6 +150,12 @@ $l_mutation_rate = if i=ARGV.index("-lm")
                    else
                      L_MUTATION_RATE
                    end
+$l_transmission_rate_by_human_genotype = if i=ARGV.index("-lt")
+                     ARGV[i+1].to_f
+                   else
+                     L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE
+                   end
+
 
 $seed = if i=ARGV.index("-s")
           ARGV[i+1].to_i
@@ -322,7 +339,7 @@ module Cells
             diff_human_genotypes = human_cells[x][y].average_genotype.diff(human_cells[new_x][new_y].average_genotype)
             diff_human_genotypes_rate = diff_human_genotypes/$genome_length.to_f
             transmission_rate = 1.0 - diff_human_genotypes_rate
-            if rand < transmission_rate and
+            if rand*$c_transmission_rate_by_human_genotype <= transmission_rate and
                self[new_x][new_y].size < UNIT_MAX and
                human_cells[new_x][new_y].size > 0
               self[new_x][new_y] << select_x
@@ -360,7 +377,7 @@ module Cells
             diff_human_genotypes = human_cells[x][y].average_genotype.diff(human_cells[new_x][new_y].average_genotype)
             diff_human_genotypes_rate = diff_human_genotypes/$genome_length.to_f
             transmission_rate = 1.0 - diff_human_genotypes_rate
-            if rand < transmission_rate and
+            if rand*$l_transmission_rate_by_human_genotype <= transmission_rate and
                self[new_x][new_y].size < UNIT_MAX and
                human_cells[new_x][new_y].size > 0
               self[new_x][new_y] << select_x
@@ -542,12 +559,14 @@ warn2 "#  C_BIRTH_RATE: #{$c_birth_rate}"
 warn2 "#  C_DEATH_RATE: #{$c_death_rate}"
 warn2 "#  C_MIGRATION_RATE: #{$c_migration_rate}"
 warn2 "#  C_MUTATION_RATE: #{$c_mutation_rate}"
+warn2 "#  C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE: #{$c_transmission_rate_by_human_genotype}"
 warn2 "#"
 warn2 "# Lang"
 warn2 "#  L_BIRTH_RATE: #{$l_birth_rate}"
 warn2 "#  L_DEATH_RATE: #{$l_death_rate}"
 warn2 "#  L_MIGRATION_RATE: #{$l_migration_rate}"
 warn2 "#  L_MUTATION_RATE: #{$l_mutation_rate}"
+warn2 "#  L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE: #{$l_transmission_rate_by_human_genotype}"
 
 
 
