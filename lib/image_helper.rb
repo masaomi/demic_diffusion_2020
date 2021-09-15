@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210902-060134'
+# Version = '20210915-095900'
 # ref: https://madogiwa0124.hatenablog.com/entry/2018/07/21/170019
 
 class ImageHelper
@@ -22,8 +22,19 @@ class ImageHelper
       configuration(text, text_position)
     end
 
+    def build2(base_image_path)
+      @image = MiniMagick::Image.open(base_image_path)
+      configuration2
+    end
+
     def write(text, base_image_path, out_png, text_position=TEXT_POSITION)
       build(text, base_image_path, text_position)
+      #@image.write uniq_file_name
+      @image.write out_png
+    end
+
+    def padding(base_image_path, out_png)
+      build2(base_image_path)
       #@image.write uniq_file_name
       @image.write out_png
     end
@@ -40,6 +51,14 @@ class ImageHelper
         config.gravity GRAVITY
         config.pointsize FONT_SIZE
         config.draw "text #{text_position} '#{text}'"
+      end
+    end
+
+    def configuration2()
+      @image.combine_options do |config|
+        config.gravity GRAVITY
+        config.background('white')
+        config.extent('110x110') 
       end
     end
 

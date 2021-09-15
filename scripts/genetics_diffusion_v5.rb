@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210910-100524'
+# Version = '20210915-094714'
 
 require "zlib"
 require "fileutils"
@@ -513,6 +513,9 @@ def merge_png(*types)
   new_type = types.join("_").split(/_/).uniq.swap(1).join("_")
   (0..$generation).each do |gi|
     files = types.map{|type| "#{$out_dir}/#{type}_time_%04d.png" % gi}
+    files.each do |png|
+      ImageHelper.padding(png, png)
+    end
     merged_file = "#{$out_dir}/#{new_type}_time_#{"%04d" % gi}.png"
     command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
     `#{command}`
