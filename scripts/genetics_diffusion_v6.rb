@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210916-182253'
+# Version = '20210916-193545'
 
 require "zlib"
 require "fileutils"
@@ -194,7 +194,7 @@ def warn2(arg, log=File.join($out_dir, "command.log"))
 end
 
 def make_png(rgb_data, out=$stdout)
-  width, height = WIDTH, WIDTH
+  width, height = WIDTH*2, WIDTH*2
   depth, color_type = 8, 2
 
 
@@ -407,12 +407,21 @@ module Cells
 
   def update_genotype_color_world(color_world)
     (0..WIDTH-1).to_a.repeated_permutation(2).each do |x,y|
-      color_world[x][y] = self[x][y].average_genotype.rgb
+      col = self[x][y].average_genotype.rgb
+      color_world[2*x][2*y] = col
+      color_world[2*x+1][2*y] = col
+      color_world[2*x][2*y+1] = col
+      color_world[2*x+1][2*y+1] = col
     end
   end
   def update_dense_color_world(color_world)
     (0..WIDTH-1).to_a.repeated_permutation(2).each do |x,y|
-      color_world[x][y] = self[x][y].rgb
+      #color_world[x][y] = self[x][y].rgb
+      col = self[x][y].rgb
+      color_world[2*x][2*y] = col
+      color_world[2*x+1][2*y] = col
+      color_world[2*x][2*y+1] = col
+      color_world[2*x+1][2*y+1] = col
     end
   end
   def save_cells(gi, type)
@@ -443,18 +452,18 @@ end
 ##
 
 # init world
-human_genotype_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
-human_dense_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
+human_genotype_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
+human_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
 human_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
 human_cells.init_cells
 
-crop_genotype_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
-crop_dense_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
+crop_genotype_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
+crop_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
 crop_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
 crop_cells.init_cells
 
-lang_genotype_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
-lang_dense_color_world = Array.new(WIDTH).map{Array.new(WIDTH,0)}
+lang_genotype_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
+lang_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
 lang_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
 lang_cells.init_cells
 
@@ -524,9 +533,9 @@ def merge_png(*types)
     `#{command}`
     warn2 "# #{command}"
     ImageHelper.write("generation: %04d" % gi, merged_file, merged_file)
-    ImageHelper.write('human', merged_file, merged_file, "0, -40")
-    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
-    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
+    ImageHelper.write('human', merged_file, merged_file, "0, -80")
+    ImageHelper.write('crop', merged_file, merged_file, "200, -80")
+    ImageHelper.write('lang', merged_file, merged_file, "400, -80")
   end
   new_type
 end

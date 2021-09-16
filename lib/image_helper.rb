@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210915-095900'
+# Version = '20210916-191854'
 # ref: https://madogiwa0124.hatenablog.com/entry/2018/07/21/170019
 
 class ImageHelper
@@ -9,9 +9,9 @@ class ImageHelper
 
   #BASE_IMAGE_PATH = './bg_image.png'.freeze
   GRAVITY = 'center'.freeze
-  TEXT_POSITION = '220,40'.freeze
+  TEXT_POSITION = '440,80'.freeze
   FONT = 'font/30170907412.ttf'.freeze
-  FONT_SIZE = 10
+  FONT_SIZE = 20
   INDENTION_COUNT = 11
   ROW_LIMIT = 8
 
@@ -58,7 +58,7 @@ class ImageHelper
       @image.combine_options do |config|
         config.gravity GRAVITY
         config.background('white')
-        config.extent('110x110') 
+        config.extent('210x210') 
       end
     end
 
@@ -70,9 +70,9 @@ end
 
 if __FILE__ == $0
   #ImageHelper.write('aaaa', "human_lang_crop_genotype_time_0000.png", "test.png")
-  ImageHelper.write('generation: 0001', "test.png", "test.png")
-  ImageHelper.write('human', "test.png", "test.png", "0, -40")
-  ImageHelper.write('crop', "test.png", "test.png", "100, -40")
-  ImageHelper.write('lang', "test.png", "test.png", "200, -40")
+  ImageHelper.write('generation: 0001', "test.png", "test.png", "440, 80")
+  ImageHelper.write('human', "test.png", "test.png", "0, -80")
+  ImageHelper.write('crop', "test.png", "test.png", "200, -80")
+  ImageHelper.write('lang', "test.png", "test.png", "400, -80")
 end
 
