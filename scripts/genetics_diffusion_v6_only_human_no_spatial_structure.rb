@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210917-060552'
+# Version = '20210917-093704'
 
 require "zlib"
 require "fileutils"
@@ -11,7 +11,7 @@ require "./lib/image_helper"
 OUT_DIR = "out"
 WIDTH = 100
 CENTER = [WIDTH/2, WIDTH/2]
-UNIT_MAX = 10
+UNIT_MAX = 1
 
 # parameters1, semi fixed
 SEED = 1234
@@ -51,18 +51,6 @@ help =-> () do
    -hg human migration_rate (default: #{H_MIGRATION_RATE})
    -hm human mutation_rate (default: #{H_MUTATION_RATE})
 
-   -cb crop birth_rate (default: #{C_BIRTH_RATE})
-   -cd crop death_rate (default: #{C_DEATH_RATE})
-   -cg crop migration_rate (default: #{C_MIGRATION_RATE})
-   -cm crop mutation_rate (default: #{C_MUTATION_RATE})
-   -ct crop transmission rate by human genotype (default: #{C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE})
-
-   -lb lang birth_rate (default: #{L_BIRTH_RATE})
-   -ld lang death_rate (default: #{L_DEATH_RATE})
-   -lg lang migration_rate (default: #{L_MIGRATION_RATE})
-   -lm lang mutation_rate (default: #{L_MUTATION_RATE})
-   -lt lang transmission rate by human genotype (default: #{L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE})
-
    -s random seed (default: #{SEED})
    -n generation (default: #{GENERATION})
    -l genome length (default: #{GENOME_LENGTH})
@@ -100,63 +88,6 @@ $h_mutation_rate = if i=ARGV.index("-hm")
                      H_MUTATION_RATE
                    end
 
-# crop
-$c_birth_rate = if i=ARGV.index("-cb")
-                  ARGV[i+1].to_f
-                else
-                  C_BIRTH_RATE
-                end
-$c_death_rate = if i=ARGV.index("-cd")
-                  ARGV[i+1].to_f
-                else
-                  C_DEATH_RATE
-                end
-$c_migration_rate = if i=ARGV.index("-cg")
-                      ARGV[i+1].to_f
-                    else
-                      C_MIGRATION_RATE
-                    end
-$c_mutation_rate = if i=ARGV.index("-cm")
-                     ARGV[i+1].to_f
-                   else
-                     C_MUTATION_RATE
-                   end
-$c_transmission_rate_by_human_genotype = if i=ARGV.index("-ct")
-                     ARGV[i+1].to_f
-                   else
-                     C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE
-                   end
-
-
-
-# lang
-$l_birth_rate = if i=ARGV.index("-lb")
-                  ARGV[i+1].to_f
-                else
-                  L_BIRTH_RATE
-                end
-$l_death_rate = if i=ARGV.index("-ld")
-                  ARGV[i+1].to_f
-                else
-                  L_DEATH_RATE
-                end
-$l_migration_rate = if i=ARGV.index("-lg")
-                      ARGV[i+1].to_f
-                    else
-                      L_MIGRATION_RATE
-                    end
-$l_mutation_rate = if i=ARGV.index("-lm")
-                     ARGV[i+1].to_f
-                   else
-                     L_MUTATION_RATE
-                   end
-$l_transmission_rate_by_human_genotype = if i=ARGV.index("-lt")
-                     ARGV[i+1].to_f
-                   else
-                     L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE
-                   end
-
-
 $seed = if i=ARGV.index("-s")
           ARGV[i+1].to_i
         else
@@ -178,7 +109,7 @@ $genome_length = if i=ARGV.index("-l")
 $out_dir = if i=ARGV.index("-o")
              ARGV[i+1]
            else
-             "#{OUT_DIR}_#{$h_birth_rate}_#{$h_death_rate}_#{$h_migration_rate}_#{$h_mutation_rate}:#{$c_birth_rate}_#{$c_death_rate}_#{$c_migration_rate}_#{$c_mutation_rate}:#{$l_birth_rate}_#{$l_death_rate}_#{$l_migration_rate}_#{$l_mutation_rate}"
+             "#{OUT_DIR}_#{$h_birth_rate}_#{$h_death_rate}_#{$h_migration_rate}_#{$h_mutation_rate}"
            end
 
 $do_not_make_anime = ARGV.index("-na")
@@ -292,7 +223,8 @@ module Cells
   end
   def init_cells
     (0..WIDTH-1).to_a.repeated_permutation(2).each do |x,y|
-      if dist(CENTER, [x,y]) < 10
+      if (WIDTH/4 < x) and (x < WIDTH/4*3) and 
+         (WIDTH/4 < y) and (y < WIDTH/4*3)
         self[x][y].generate_cell_pop(UNIT_MAX)
       end
     end
@@ -300,33 +232,61 @@ module Cells
 
   # one generation
   def human_one_generation
+    cur_pop = self.flatten
+    new_pop = []
+    while new_pop.length < cur_pop.length
+      #new_pop << cur_pop.sample.make_child($h_mutation_rate)
+      new_pop << cur_pop.sample.clone
+    end
+    i = 0
     (0..WIDTH-1).to_a.repeated_permutation(2).to_a.shuffle.each do |x,y|
-      self[x][y].size.times do |i|
-        if rand<$h_migration_rate
-          if self[x][y].length > 0
-            select_i = rand(self[x][y].length)
-            select_x = self[x][y].delete_at(select_i)
-            x_direction = [1,-1][rand(2)]
-            y_direction = [1,-1][rand(2)]
-            if self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH].size < UNIT_MAX
-              self[(x+x_direction)%WIDTH][(y+y_direction)%WIDTH] << select_x
-            end
-          end
-        end
-        if rand<($h_birth_rate)
-          if self[x][y].size > 0 and self[x][y].size < UNIT_MAX
-            select_i = rand(self[x][y].length)
-            self[x][y] << self[x][y][select_i].make_child($h_mutation_rate)
-          end
-        end
-        if rand<($h_death_rate)
-          if self[x][y].size > 0
-            select_i = rand(self[x][y].length)
-            self[x][y].delete_at(select_i)
-          end
-        end
+      if (WIDTH/4 < x) and (x < WIDTH/4*3) and 
+         (WIDTH/4 < y) and (y < WIDTH/4*3)
+        self[x][y] = [new_pop[i]]
+        i += 1
       end
     end
+
+#    (0..WIDTH-1).to_a.repeated_permutation(2).to_a.shuffle.each do |x,y|
+#      self[x][y].size.times do |i|
+#        if rand<$h_migration_rate
+#          if self[x][y].length > 0
+#            select_i = rand(self[x][y].length)
+#            select_x = self[x][y].delete_at(select_i)
+#            x_new = rand(WIDTH-1)
+#            y_new = rand(WIDTH-1)
+#            if self[x_new][y_new].size > 0
+#              select_j = rand(self[x_new][y_new].length)
+#              select_y = self[x_new][y_new].delete_at(select_j)
+#              self[x_new][y_new] << select_x
+#              self[x][y] << select_y
+#            end
+#          end
+#        end
+#        if rand<($h_birth_rate)
+#          #if self[x][y].size > 0 and self[x][y].size < UNIT_MAX
+#          if self[x][y].size > 0
+#            select_i = rand(self[x][y].length)
+#            x_new = rand(WIDTH/2) + WIDTH/4
+#            y_new = rand(WIDTH/2) + WIDTH/4
+#            if self[x_new][y_new].size == UNIT_MAX
+#              select_j = rand(self[x_new][y_new].length)
+#              select_y = self[x_new][y_new].delete_at(select_j)
+#              self[x][y] << select_y
+#              self[x_new][y_new] << self[x][y][select_i].make_child($h_mutation_rate)
+#            elsif self[x_new][y_new].size < UNIT_MAX
+#              self[x_new][y_new] << self[x][y][select_i].make_child($h_mutation_rate)
+#            end
+#          end
+#        end
+#        if rand<($h_death_rate)
+#          if self[x][y].size > 0
+#            select_i = rand(self[x][y].length)
+#            self[x][y].delete_at(select_i)
+#          end
+#        end
+#      end
+#    end
   end
   def crop_one_generation(human_cells)
     (0..WIDTH-1).to_a.repeated_permutation(2).to_a.shuffle.each do |x,y|
@@ -457,61 +417,25 @@ human_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
 human_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
 human_cells.init_cells
 
-crop_genotype_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
-crop_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
-crop_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
-crop_cells.init_cells
-
-lang_genotype_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
-lang_dense_color_world = Array.new(WIDTH*2).map{Array.new(WIDTH*2,0)}
-lang_cells = Array.new(WIDTH).map{Array.new(WIDTH).map{[]}}
-lang_cells.init_cells
-
-
 human_cells.save_cells(0, "human")
-crop_cells.save_cells(0, "crop")
-lang_cells.save_cells(0, "lang")
 unless $do_not_make_anime
   human_cells.update_genotype_color_world(human_genotype_color_world)
   human_cells.update_dense_color_world(human_dense_color_world)
   save_color_world(human_genotype_color_world, 0, "human_genotype")
   save_color_world(human_dense_color_world, 0, "human_dense")
 
-  crop_cells.update_genotype_color_world(crop_genotype_color_world)
-  crop_cells.update_dense_color_world(crop_dense_color_world)
-  save_color_world(crop_genotype_color_world, 0, "crop_genotype")
-  save_color_world(crop_dense_color_world, 0, "crop_dense")
-
-  lang_cells.update_genotype_color_world(lang_genotype_color_world)
-  lang_cells.update_dense_color_world(lang_dense_color_world)
-  save_color_world(lang_genotype_color_world, 0, "lang_genotype")
-  save_color_world(lang_dense_color_world, 0, "lang_dense")
 end
 
 $generation.times do |gi|
   human_cells.human_one_generation
-  crop_cells.crop_one_generation(human_cells)
-  lang_cells.lang_one_generation(human_cells)
 
-  warn "# generation: #{gi+1}, human pop size: #{human_cells.total_size}, crop pop size: #{crop_cells.total_size}; lang pop size: #{lang_cells.total_size}"
+  warn "# generation: #{gi+1}, human pop size: #{human_cells.total_size}"
   human_cells.save_cells(gi+1, "human")
-  crop_cells.save_cells(gi+1, "crop")
-  lang_cells.save_cells(gi+1, "lang")
   unless $do_not_make_anime
     human_cells.update_genotype_color_world(human_genotype_color_world)
     human_cells.update_dense_color_world(human_dense_color_world)
     save_color_world(human_genotype_color_world, gi+1, "human_genotype")
     save_color_world(human_dense_color_world, gi+1, "human_dense")
-
-    crop_cells.update_genotype_color_world(crop_genotype_color_world)
-    crop_cells.update_dense_color_world(crop_dense_color_world)
-    save_color_world(crop_genotype_color_world, gi+1, "crop_genotype")
-    save_color_world(crop_dense_color_world, gi+1, "crop_dense")
-
-    lang_cells.update_genotype_color_world(lang_genotype_color_world)
-    lang_cells.update_dense_color_world(lang_dense_color_world)
-    save_color_world(lang_genotype_color_world, gi+1, "lang_genotype")
-    save_color_world(lang_dense_color_world, gi+1, "lang_dense")
   end
 end
 
@@ -529,13 +453,13 @@ def merge_png(*types)
       ImageHelper.padding(png, png)
     end
     merged_file = "#{$out_dir}/#{new_type}_time_#{"%04d" % gi}.png"
-    command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
-    `#{command}`
-    warn2 "# #{command}"
-    ImageHelper.write("generation: %04d" % gi, merged_file, merged_file)
+#    command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
+#    `#{command}`
+#    warn2 "# #{command}"
+    ImageHelper.write("generation: %04d" % gi, merged_file, merged_file, "40, 80")
     ImageHelper.write('human', merged_file, merged_file, "0, -80")
-    ImageHelper.write('crop', merged_file, merged_file, "200, -80")
-    ImageHelper.write('language', merged_file, merged_file, "400, -80")
+#    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
+#    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
   end
   new_type
 end
@@ -550,10 +474,10 @@ end
 # log
 puts
 unless $do_not_make_anime
-  human_crop_lang_genotype = merge_png("human_genotype", "crop_genotype", "lang_genotype")
-  make_gif_anime(human_crop_lang_genotype)
-  human_crop_lang_dense = merge_png("human_dense", "crop_dense", "lang_dense")
-  make_gif_anime(human_crop_lang_dense)
+  human_genotype = merge_png("human_genotype")
+  make_gif_anime(human_genotype)
+  human_dense = merge_png("human_dense")
+  make_gif_anime(human_dense)
 end
 puts
 warn2 "ruby #{__FILE__} #{ARGV.join(" ")}"
@@ -568,20 +492,6 @@ warn2 "#  H_BIRTH_RATE: #{$h_birth_rate}"
 warn2 "#  H_DEATH_RATE: #{$h_death_rate}"
 warn2 "#  H_MIGRATION_RATE: #{$h_migration_rate}"
 warn2 "#  H_MUTATION_RATE: #{$h_mutation_rate}"
-warn2 "#"
-warn2 "# Crop"
-warn2 "#  C_BIRTH_RATE: #{$c_birth_rate}"
-warn2 "#  C_DEATH_RATE: #{$c_death_rate}"
-warn2 "#  C_MIGRATION_RATE: #{$c_migration_rate}"
-warn2 "#  C_MUTATION_RATE: #{$c_mutation_rate}"
-warn2 "#  C_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE: #{$c_transmission_rate_by_human_genotype}"
-warn2 "#"
-warn2 "# Lang"
-warn2 "#  L_BIRTH_RATE: #{$l_birth_rate}"
-warn2 "#  L_DEATH_RATE: #{$l_death_rate}"
-warn2 "#  L_MIGRATION_RATE: #{$l_migration_rate}"
-warn2 "#  L_MUTATION_RATE: #{$l_mutation_rate}"
-warn2 "#  L_TRANSMISSION_RATE_BY_HUMAN_GENOTYPE: #{$l_transmission_rate_by_human_genotype}"
 
 
 
