@@ -14,7 +14,9 @@ ruby genetics_diffusion_v6_only_human.rb -hm 0.0 -n 1000
 ruby genetics_diffusion_v6_only_human.rb -hm 0.001 -n 1000
 
 # v6 random genotypes at init cells
+# No mutation (base case)
 ruby scripts/genetics_diffusion_v6.rb -hm 0.0 -cm 0.001 -lm 0.001 -hd 0.2 -cd 0.2 -ld 0.2 -n 1000
+# Small mutation rate
 ruby scripts/genetics_diffusion_v6.rb -hm 0.001 -cm 0.001 -lm 0.001 -hd 0.2 -cd 0.2 -ld 0.2 -n 1000
 
 # 20210917
