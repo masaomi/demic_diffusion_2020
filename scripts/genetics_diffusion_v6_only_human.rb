@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210916-192041'
+# Version = '20210921-112504'
 
 require "zlib"
 require "fileutils"
@@ -428,7 +428,7 @@ def merge_png(*types)
 #    `#{command}`
 #    warn2 "# #{command}"
     ImageHelper.write("generation: %04d" % gi, merged_file, merged_file, "40, 80")
-    ImageHelper.write('human', merged_file, merged_file, "0, -80")
+#    ImageHelper.write('human', merged_file, merged_file, "0, -80")
 #    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
 #    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
   end
