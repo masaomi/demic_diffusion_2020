@@ -33,4 +33,8 @@ ruby scripts/genetics_diffusion_v6.rb -hm 0.001 -cm 0.001 -lm 0.001 -hd 0.2 -cd 
 ruby scripts/genetics_diffusion_v6_only_human.rb -hm 0.0 -n 500
 
 # NX, after this search parameters to finish soon in only human + no spatial structure
-# e.g. ruby genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -n 500 -s 123
+ruby genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -n 500 -s 123
+
+# 20210922 search fast fixization
+# ruby scripts/genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -n 500 -s 4573
+bash search_fast_fix_only_human_no_space.sh
