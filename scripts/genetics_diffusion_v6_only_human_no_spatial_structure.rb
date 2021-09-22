@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
-# Version = '20210921-110501'
+# Version = '20210922-161457'
 
 require "zlib"
 require "fileutils"
@@ -431,11 +431,13 @@ $generation.times do |gi|
 
   warn "# generation: #{gi+1}, human pop size: #{human_cells.total_size}"
   human_cells.save_cells(gi+1, "human")
-  unless $do_not_make_anime
-    human_cells.update_genotype_color_world(human_genotype_color_world)
-    human_cells.update_dense_color_world(human_dense_color_world)
-    save_color_world(human_genotype_color_world, gi+1, "human_genotype")
-    save_color_world(human_dense_color_world, gi+1, "human_dense")
+  if (gi+1)%10==0
+    unless $do_not_make_anime
+      human_cells.update_genotype_color_world(human_genotype_color_world)
+      human_cells.update_dense_color_world(human_dense_color_world)
+      save_color_world(human_genotype_color_world, gi+1, "human_genotype")
+      save_color_world(human_dense_color_world, gi+1, "human_dense")
+    end
   end
 end
 
@@ -448,18 +450,20 @@ end
 def merge_png(*types)
   new_type = types.join("_").split(/_/).uniq.swap(1).join("_")
   (0..$generation).each do |gi|
-    files = types.map{|type| "#{$out_dir}/#{type}_time_%04d.png" % gi}
-    files.each do |png|
-      ImageHelper.padding(png, png)
+    if gi%10==0
+      files = types.map{|type| "#{$out_dir}/#{type}_time_%04d.png" % gi}
+      files.each do |png|
+        ImageHelper.padding(png, png)
+      end
+      merged_file = "#{$out_dir}/#{new_type}_time_#{"%04d" % gi}.png"
+  #    command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
+  #    `#{command}`
+  #    warn2 "# #{command}"
+      ImageHelper.write("generation: %04d" % gi, merged_file, merged_file, "40, 80")
+  #    ImageHelper.write('human', merged_file, merged_file, "0, -80")
+  #    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
+  #    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
     end
-    merged_file = "#{$out_dir}/#{new_type}_time_#{"%04d" % gi}.png"
-#    command = "convert +append #{files.join(" ")} #{merged_file}; rm #{files.join(" ")}"
-#    `#{command}`
-#    warn2 "# #{command}"
-    ImageHelper.write("generation: %04d" % gi, merged_file, merged_file, "40, 80")
-#    ImageHelper.write('human', merged_file, merged_file, "0, -80")
-#    ImageHelper.write('crop', merged_file, merged_file, "100, -40")
-#    ImageHelper.write('lang', merged_file, merged_file, "200, -40")
   end
   new_type
 end
