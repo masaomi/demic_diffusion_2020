@@ -38,3 +38,19 @@ ruby genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -n 500 -s 
 # 20210922 search fast fixization
 # ruby scripts/genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -n 500 -s 4573
 bash search_fast_fix_only_human_no_space.sh
+
+
+
+
+# 20210922
+# reduced gif anime resolution, skip each 10 generation
+ruby genetics_diffusion_v6_only_human_no_spatial_structure.rb -hm 0.0 -hd 0.2 -n 1000
+
+# no mutation, human, crop, language, running
+ruby scripts/genetics_diffusion_v6.rb -hd 0.2 -cd 0.2 -ld 0.2 -hm 0.0 -cm 0.0 -lm 0.0 -n 500
+
+# NX
+# small mutation, human, crop, language
+ruby scripts/genetics_diffusion_v6.rb -hd 0.2 -cd 0.2 -ld 0.2 -hm 0.001 -cm 0.001 -lm 0.001 -n 500
+
+
